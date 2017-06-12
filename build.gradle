@@ -10,6 +10,7 @@ buildscript {
 
 apply plugin: 'java'
 apply plugin: 'kotlin'
+apply plugin: 'application'
 
 repositories {
   jcenter()
@@ -17,5 +18,14 @@ repositories {
 
 dependencies {
   compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
-  compile 'com.vdurmont:semver4j:2.0.2'
+  compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
+  compile 'org.twitter4j:twitter4j-core:4.0.6'
+  compile 'com.squareup.moshi:moshi:1.5.0'
+  compile 'com.squareup.moshi:moshi-kotlin:1.5.0'
+}
+
+mainClassName = "Main"
+
+run {
+  args "config.json"
 }

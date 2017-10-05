@@ -8,7 +8,9 @@ import twitter4j.TwitterFactory
 import twitter4j.conf.ConfigurationBuilder
 import java.nio.file.Paths
 
-class Handler: RequestHandler<String, String> {
+class Input
+
+class Handler: RequestHandler<Input, String> {
     companion object {
         @JvmStatic
         val cache = FileStore(Paths.get("/tmp/agptweeter"))
@@ -17,7 +19,7 @@ class Handler: RequestHandler<String, String> {
         val db = DynamoStore(DynamoDB(AmazonDynamoDBClient()).getTable("agp-tweeter"))
     }
 
-    override fun handleRequest(input: String?, context: Context?): String {
+    override fun handleRequest(input: Input?, context: Context?): String {
         ArtifactSource.values().forEach {
             val config = it.toConfig()
             val twitter = TwitterFactory(ConfigurationBuilder()
@@ -29,7 +31,4 @@ class Handler: RequestHandler<String, String> {
         }
         return ""
     }
-}
-
-fun Tweeter(config: TwitterConfig): (String)->Unit {
 }

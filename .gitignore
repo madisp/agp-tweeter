@@ -5,3 +5,4 @@
 *.swp
 config.json
 versions.db
+/out/

@@ -5,6 +5,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import com.amazonaws.services.dynamodbv2.document.Item
 import com.amazonaws.services.dynamodbv2.document.Table
+import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec
 
 /**
  * High level abstraction of a simple key-value store.
@@ -55,7 +56,8 @@ class FileStore(val basePath: Path): Store {
  */
 class DynamoStore(private val db: Table): Store {
     override fun read(key: String): ByteArray? {
-        val item: Item? = db.getItem("coords", key)
+        val spec = GetItemSpec().withPrimaryKey("coords", key).withConsistentRead(true)
+        val item: Item? = db.getItem(spec)
         return item?.getBinary("bytes")
     }
 

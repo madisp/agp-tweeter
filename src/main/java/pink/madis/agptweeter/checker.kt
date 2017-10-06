@@ -16,9 +16,15 @@ fun check(artifactSource: ArtifactSource, cache: Store, db: Store, tweet: (Strin
 
   val remoteVersion = remote.latestVersion(artifactSource.coords) ?: throw IOException("Did not get a proper remote version")
 
+  println("Latest remote version is ${remoteVersion.orig}")
+
   // hit cache first, because the most common case is that we're not hitting anything
-  if (!isNewRemoteVersion(remoteVersion, StoreFetcher(cache)) && !isNewRemoteVersion(remoteVersion, StoreFetcher(db))) {
-    // no hit, return
+  if (!isNewRemoteVersion(remoteVersion, StoreFetcher(cache))) {
+    println("Local cache already has version, no tweet")
+    return
+  }
+  if (!isNewRemoteVersion(remoteVersion, StoreFetcher(db))) {
+    println("DynamoDB already has this version, no tweet")
     return
   }
 

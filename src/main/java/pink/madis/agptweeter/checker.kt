@@ -25,12 +25,16 @@ fun checkAndTweet(artifactSource: ArtifactSource, cache: Store, db: Store, tweet
   }
   if (!isNewRemoteVersion(remoteVersion, StoreFetcher(db, artifactSource.key))) {
     println("DynamoDB already has this version, no tweet")
+    // update local cache too so that we don't hit dynamodb for the next run
+    cache.write(artifactSource.key, remoteVersion.orig.toByteArray(UTF_8))
     return
   }
 
-  tweet("${artifactSource.prettyName} ${remoteVersion.orig} is out!")
+  val tweetContents = "${artifactSource.prettyName} ${remoteVersion.orig} is out!"
+  println("Tweet: $tweetContents")
+  tweet(tweetContents)
 
-  // update cache and db
+  // we've definitely tweeted now, update both cache and db
   cache.write(artifactSource.key, remoteVersion.orig.toByteArray(UTF_8))
   db.write(artifactSource.key, remoteVersion.orig.toByteArray(UTF_8))
 }

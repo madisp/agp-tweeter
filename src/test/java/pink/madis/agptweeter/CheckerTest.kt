@@ -5,15 +5,15 @@ import org.junit.Test
 import java.io.IOException
 
 class EmptyFetcher: Fetcher {
-  override fun latestVersion(): Version? = null
+  override fun versions(): Set<String>? = null
 }
 
-class FixedFetcher(private val version: String): Fetcher {
-  override fun latestVersion(): Version? = Version(version)
+class FixedFetcher(private vararg val versions: String): Fetcher {
+  override fun versions(): Set<String>? = setOf(*versions)
 }
 
 class FailingFetcher: Fetcher {
-  override fun latestVersion(): Version? = throw IOException("Expected failure")
+  override fun versions(): Set<String>? = throw IOException("Expected failure")
 }
 
 class FixedSource(
@@ -24,30 +24,33 @@ class FixedSource(
 val noTweet: (String)->Unit = { throw IllegalStateException("Unexpected tweet: $it") }
 
 class CheckerTest {
+  private val tweets = mutableListOf<String>()
+  private val tweeter: (String)->Unit = { tweets.add(it) }
+
   @Test
   fun testEmptyLocalVersion() {
-    assertThat(isNewRemoteVersion(Version("0.0.1"), EmptyFetcher())).isTrue()
+    assertThat(isNewRemoteVersion(setOf("0.0.1"), setOf())).isTrue()
   }
 
   @Test
   fun testLaterLocalVersion() {
-    assertThat(isNewRemoteVersion(Version("1.5.3"), FixedFetcher("2.0.0"))).isFalse()
+    assertThat(isNewRemoteVersion(setOf("1.5.3"), setOf("2.0.0"))).isTrue()
   }
 
   @Test
   fun testOlderLocalVersion() {
-    assertThat(isNewRemoteVersion(Version("2.0.1"), FixedFetcher("2.0.0"))).isTrue()
+    assertThat(isNewRemoteVersion(setOf("2.0.1"), setOf("2.0.0"))).isTrue()
   }
 
   @Test
   fun testSameLocalVersion() {
-    assertThat(isNewRemoteVersion(Version("2.0.0"), FixedFetcher("2.0.0"))).isFalse()
+    assertThat(isNewRemoteVersion(setOf("2.0.0"), setOf("2.0.0"))).isFalse()
   }
 
   @Test
   fun failingRemoteResultsInException() {
     try {
-      checkAndTweet(FixedSource(fetcher = FailingFetcher()), MemStore(), MemStore(), noTweet)
+      checkAndTweet(FixedSource(fetcher = FailingFetcher()), VersionsStore(MemStore(), moshi), VersionsStore(MemStore(), moshi), noTweet)
     }
     catch (e: IOException) {
       assertThat(e).hasMessageThat().isEqualTo("Expected failure")
@@ -59,7 +62,7 @@ class CheckerTest {
   @Test
   fun emptyRemoteResultsInException() {
     try {
-      checkAndTweet(FixedSource(fetcher = EmptyFetcher()), MemStore(), MemStore(), noTweet)
+      checkAndTweet(FixedSource(fetcher = EmptyFetcher()), VersionsStore(MemStore(), moshi), VersionsStore(MemStore(), moshi), noTweet)
     }
     catch (e: IOException) {
       assertThat(e).hasMessageThat().isEqualTo("Did not get a proper remote version")
@@ -70,59 +73,84 @@ class CheckerTest {
 
   @Test
   fun emptyLocalStateResultsInTweet() {
-    val cache = MemStore()
-    val db = MemStore()
-    var tweet: String? = null
+    val cache = VersionsStore(MemStore(), moshi)
+    val db = VersionsStore(MemStore(), moshi)
 
-    checkAndTweet(FixedSource(), cache, db, { tweet = it })
+    checkAndTweet(FixedSource(), cache, db, tweeter)
 
-    assertThat(tweet).isEqualTo("Artifact 1.0.0 is out!")
+    assertThat(tweets).containsExactly("Artifact 1.0.0 is out!")
     // make sure that both cache and db are updated too
-    assertThat(cache.read("key")).isEqualTo("1.0.0".toByteArray())
-    assertThat(db.read("key")).isEqualTo("1.0.0".toByteArray())
+    assertThat(cache.versions("key")).containsExactly("1.0.0")
+    assertThat(db.versions("key")).containsExactly("1.0.0")
   }
 
   @Test
   fun emptyCacheStateResultInNoTweet() {
-    val cache = MemStore()
-    val db = MemStore().apply {
-      write("key", "1.0.0".toByteArray())
+    val cache = VersionsStore(MemStore(), moshi)
+    val db = VersionsStore(MemStore(), moshi).apply {
+      store("key", setOf("1.0.0"))
     }
 
     checkAndTweet(FixedSource(), cache, db, noTweet)
 
     // make sure that cache gets updated
-    assertThat(cache.read("key")).isEqualTo("1.0.0".toByteArray())
+    assertThat(cache.versions("key")).containsExactly("1.0.0")
   }
 
   @Test
   fun cacheAndDbAreUpToDate() {
-    val cache = MemStore().apply {
-      write("key", "1.0.0".toByteArray())
+    val cache = VersionsStore(MemStore(), moshi).apply {
+      store("key", setOf("1.0.0"))
     }
-    val db = object : Store {
-      override fun read(key: String): ByteArray? = throw IllegalStateException("Not supposed to hit db")
-      override fun write(key: String, bytes: ByteArray) = throw IllegalStateException("Not supposed to hit db")
-    }
+    val db = VersionsStore(object : Store {
+      override fun read(key: String): String? = throw IllegalStateException("Not supposed to hit db")
+      override fun write(key: String, value: String) = throw IllegalStateException("Not supposed to hit db")
+    }, moshi)
 
     checkAndTweet(FixedSource(), cache, db, noTweet)
   }
 
   @Test
   fun cacheAndDbAreOutOfDate() {
-    val cache = MemStore().apply {
-      write("key", "0.9.0".toByteArray())
+    val cache = VersionsStore(MemStore(), moshi).apply {
+      store("key", setOf("0.9.0"))
     }
-    val db = MemStore().apply {
-      write("key", "0.9.0".toByteArray())
+    val db = VersionsStore(MemStore(), moshi).apply {
+      store("key", setOf("0.9.0"))
     }
-    var tweet: String? = null
 
-    checkAndTweet(FixedSource(), cache, db, { tweet = it })
+    checkAndTweet(FixedSource(), cache, db, tweeter)
 
-    assertThat(tweet).isEqualTo("Artifact 1.0.0 is out!")
+    assertThat(tweets).containsExactly("Artifact 1.0.0 is out!")
     // make sure that both cache and db are updated too
-    assertThat(cache.read("key")).isEqualTo("1.0.0".toByteArray())
-    assertThat(db.read("key")).isEqualTo("1.0.0".toByteArray())
+    assertThat(cache.versions("key")).containsExactly("1.0.0")
+    assertThat(db.versions("key")).containsExactly("1.0.0")
+  }
+
+  @Test
+  fun olderVersionIsReleased() {
+    val cache = VersionsStore(MemStore(), moshi).apply {
+      store("key", setOf("2.0.0"))
+    }
+    val db = VersionsStore(MemStore(), moshi).apply {
+      store("key", setOf("2.0.0"))
+    }
+
+    checkAndTweet(FixedSource(fetcher = FixedFetcher("1.0.0", "2.0.0")), cache, db, tweeter)
+
+    assertThat(tweets).containsExactly("Artifact 1.0.0 is out!")
+  }
+
+  @Test
+  fun multipleNewVersionsResultsInMultipleTweets() {
+    val cache = VersionsStore(MemStore(), moshi)
+    val db = VersionsStore(MemStore(), moshi)
+
+    checkAndTweet(FixedSource(fetcher = FixedFetcher("1.0.0", "2.0.0")), cache, db, tweeter)
+
+    assertThat(tweets).containsExactly(
+      "Artifact 1.0.0 is out!",
+      "Artifact 2.0.0 is out!"
+    )
   }
 }

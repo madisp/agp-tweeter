@@ -4,34 +4,31 @@ import retrofit2.Call
 import retrofit2.http.GET
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.xpath.XPathFactory
-import kotlin.text.Charsets.UTF_8
 
 /**
  * Fetches latest version information for a specific artifact from somewhere. Could be local cache, remote repo, etc...
  */
 interface Fetcher {
-  fun latestVersion(): Version?
+  fun versions(): Set<String>?
 }
 
 /**
- * Fetches a cached latest version from the given store
+ * Fetches versions from the given store
  */
-class StoreFetcher(private val store: Store, private val key: String): Fetcher {
-  override fun latestVersion(): Version? {
-    return store.read(key)?.toString(UTF_8)?.let { Version(it) }
-  }
+class StoreFetcher(private val store: VersionsStore, private val key: String): Fetcher {
+  override fun versions(): Set<String>? = store.versions(key)
 }
 
 /**
  * Fetches a latest version from the Google maven repo
  */
 class GoogleFetcher(private val coords: MavenCoords): Fetcher {
-  override fun latestVersion(): Version? {
+  override fun versions(): Set<String>? {
     val url = "https://dl.google.com/dl/android/maven2/${coords.groupId.replace('.', '/')}/group-index.xml"
     val xml = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(url)
     val xpath = XPathFactory.newInstance().newXPath().compile("/${coords.groupId}/${coords.artifactId}/@versions")
     val versions = xpath.evaluate(xml).split(',')
-    return versions.map { Version(it) }.max()
+    return versions.toSet()
   }
 }
 
@@ -39,13 +36,13 @@ class GoogleFetcher(private val coords: MavenCoords): Fetcher {
  * Fetches a latest version of Gradle
  */
 class GradleFetcher(private val endpointVersions: GradleVersionsApi): Fetcher {
-  override fun latestVersion(): Version? {
+  override fun versions(): Set<String>? {
     val versionResponse = endpointVersions.all().execute()
     if (!versionResponse.isSuccessful) {
       return null
     }
     val versions = versionResponse.body()?.filter { !it.nightly && !it.snapshot }
-    return versions?.map { Version(it.version) }?.max()
+    return versions?.map { it.version }?.toSet()
   }
 }
 

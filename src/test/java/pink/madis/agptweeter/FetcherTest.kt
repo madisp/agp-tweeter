@@ -51,7 +51,6 @@ class FetcherTest {
         val store = MemStore()
         val fetcher = StoreFetcher(store, "key")
 
-        val coords = MavenCoords("com.android.tools.build", "gradle")
         store.write("key", "0.0.1".toByteArray(UTF_8))
 
         assertTrue(fetcher.latestVersion()!!.orig == "0.0.1")

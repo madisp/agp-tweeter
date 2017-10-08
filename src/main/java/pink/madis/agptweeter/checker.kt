@@ -23,6 +23,7 @@ fun checkAndTweet(artifactSource: ArtifactSource, cache: Store, db: Store, tweet
     println("Local cache already has version, no tweet")
     return
   }
+
   if (!isNewRemoteVersion(remoteVersion, StoreFetcher(db, artifactSource.key))) {
     println("DynamoDB already has this version, no tweet")
     // update local cache too so that we don't hit dynamodb for the next run

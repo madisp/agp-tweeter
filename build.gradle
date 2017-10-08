@@ -39,4 +39,5 @@ dependencies {
   compile 'com.squareup.moshi:moshi-kotlin:1.5.0'
 
   testCompile 'junit:junit:4.12'
+  testCompile 'com.google.truth:truth:0.36'
 }

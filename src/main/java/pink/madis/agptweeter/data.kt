@@ -8,7 +8,7 @@ data class MavenCoords(val groupId: String, val artifactId: String) {
     fun toKey(): String = DigestUtils.sha1Hex("$groupId:$artifactId")
 }
 
-data class Version(val orig: String, val coords: MavenCoords): Comparable<Version> {
+data class Version(val orig: String): Comparable<Version> {
     private val semantic = Semver(orig, Semver.SemverType.COCOAPODS)
 
     override fun compareTo(other: Version): Int {
@@ -17,8 +17,15 @@ data class Version(val orig: String, val coords: MavenCoords): Comparable<Versio
 }
 
 data class TwitterConfig(
-        val consumerKey: String,val consumerSecret: String,
-        val accessToken: String, val accessTokenSecret: String
+    val consumerKey: String, val consumerSecret: String,
+    val accessToken: String, val accessTokenSecret: String
 )
 
-data class Config(val artifact: MavenCoords, val twitter: TwitterConfig, val prettyName: String)
+data class Config(val key: String, val twitter: TwitterConfig, val prettyName: String)
+
+data class GradleVersion(
+    val version: String,
+    val buildTime: String,
+    val snapshot: Boolean,
+    val nightly: Boolean
+)

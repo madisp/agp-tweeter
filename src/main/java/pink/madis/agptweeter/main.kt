@@ -10,15 +10,11 @@ import java.nio.file.Paths
 
 class Input
 
+val cache = FileStore(Paths.get("/tmp/agptweeter"))
+
+val db = DynamoStore(DynamoDB(AmazonDynamoDBClient()).getTable("agp-tweeter"))
+
 class Handler: RequestHandler<Input, String> {
-    companion object {
-        @JvmStatic
-        val cache = FileStore(Paths.get("/tmp/agptweeter"))
-
-        @JvmStatic
-        val db = DynamoStore(DynamoDB(AmazonDynamoDBClient()).getTable("agp-tweeter"))
-    }
-
     override fun handleRequest(input: Input?, context: Context?): String {
         ArtifactSource.values().forEach {
             val config = it.toConfig()
@@ -27,7 +23,7 @@ class Handler: RequestHandler<Input, String> {
                     .setOAuthAccessTokenSecret(config.twitter.accessTokenSecret)
                     .setOAuthConsumerKey(config.twitter.consumerKey)
                     .setOAuthConsumerSecret(config.twitter.consumerSecret).build()).instance
-            check(it, cache, db, { twitter.updateStatus(it) })
+            checkAndTweet(it, cache, db, { twitter.updateStatus(it) })
         }
         return ""
     }

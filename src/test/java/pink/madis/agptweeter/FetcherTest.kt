@@ -1,15 +1,20 @@
 package pink.madis.agptweeter
 
+import com.google.common.truth.Truth.assertThat
 import com.squareup.moshi.KotlinJsonAdapterFactory
 import com.squareup.moshi.Moshi
 import okhttp3.OkHttpClient
 import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
 import org.junit.Ignore
 import org.junit.Test
+import retrofit2.Call
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
-import kotlin.text.Charsets.UTF_8
+import retrofit2.mock.Calls
+
+class FixedGradleApi(private vararg val versions: GradleVersion): GradleVersionsApi {
+  override fun all(): Call<List<GradleVersion>> = Calls.response(listOf(*versions))
+}
 
 class FetcherTest {
   @Test
@@ -18,7 +23,7 @@ class FetcherTest {
     val coords = MavenCoords("com.android.tools.build", "gradle")
     val version = GoogleFetcher(coords).latestVersion()
     println("Latest AGP version is $version")
-    assertTrue(version!! > Version("0.0.1"))
+    assertThat(version).isGreaterThan(Version("0.0.1"))
   }
 
   @Test
@@ -37,7 +42,37 @@ class FetcherTest {
 
     val version = GradleFetcher(versionsApi).latestVersion()
     println("Latest Gradle version is $version")
-    assertTrue(version!! > Version("0.0.1"))
+    assertThat(version).isGreaterThan(Version("0.0.1"))
+  }
+
+  @Test
+  fun gradleFetcherIgnoresNightlies() {
+    val versionsApi = FixedGradleApi(
+        GradleVersion(version = "4.4-20171008000020+0000", buildTime = "20171008000020+0000", snapshot = false, nightly = true),
+        GradleVersion(version = "4.3-rc-1", buildTime = "20171006000020+0000", snapshot = false, nightly = false)
+    )
+    val version = GradleFetcher(versionsApi).latestVersion()
+    assertThat(version).isEqualTo(Version("4.3-rc-1"))
+  }
+
+  @Test
+  fun gradleFetcherIgnoresSnapshots() {
+    val versionsApi = FixedGradleApi(
+        GradleVersion(version = "4.4-20171008000020+0000", buildTime = "20171008000020+0000", snapshot = true, nightly = false),
+        GradleVersion(version = "4.3-rc-1", buildTime = "20171006000020+0000", snapshot = false, nightly = false)
+    )
+    val version = GradleFetcher(versionsApi).latestVersion()
+    assertThat(version).isEqualTo(Version("4.3-rc-1"))
+  }
+
+  @Test
+  fun gradleFetcherSortsBySemanticVersion() {
+    val versionsApi = FixedGradleApi(
+        GradleVersion(version = "4.4", buildTime = "20171008000020+0000", snapshot = false, nightly = false),
+        GradleVersion(version = "30.0", buildTime = "20171006000020+0000", snapshot = false, nightly = false)
+    )
+    val version = GradleFetcher(versionsApi).latestVersion()
+    assertThat(version).isEqualTo(Version("30.0"))
   }
 
   @Test
@@ -51,14 +86,14 @@ class FetcherTest {
     val store = MemStore()
     val fetcher = StoreFetcher(store, "key")
 
-    store.write("key", "0.0.1".toByteArray(UTF_8))
+    store.write("key", "0.0.1".toByteArray())
 
-    assertTrue(fetcher.latestVersion()!!.orig == "0.0.1")
+    assertThat(fetcher.latestVersion()!!.orig).isEqualTo("0.0.1")
 
-    store.write("key", "0.0.10".toByteArray(UTF_8))
-    assertTrue(fetcher.latestVersion()!!.orig == "0.0.10")
+    store.write("key", "0.0.10".toByteArray())
+    assertThat(fetcher.latestVersion()!!.orig).isEqualTo("0.0.10")
 
     // other coordinates should still be empty
-    assertNull(StoreFetcher(store, "key2").latestVersion())
+    assertThat(StoreFetcher(store, "key2").latestVersion()).isNull()
   }
 }

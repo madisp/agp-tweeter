@@ -38,7 +38,7 @@ class MemStore: Store {
 /**
  * A dumb key-value store that maps to files in a folder.
  */
-class FileStore(val basePath: Path): Store {
+class FileStore(private val basePath: Path): Store {
     override fun read(key: String): ByteArray? {
         val f = basePath.resolve(key)
         return if (Files.exists(f)) Files.readAllBytes(f) else null

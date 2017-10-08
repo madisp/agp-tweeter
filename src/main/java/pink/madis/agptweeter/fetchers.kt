@@ -16,7 +16,7 @@ interface Fetcher {
 /**
  * Fetches a cached latest version from the given store
  */
-class StoreFetcher(val store: Store, private val key: String): Fetcher {
+class StoreFetcher(private val store: Store, private val key: String): Fetcher {
     override fun latestVersion(): Version? {
         return store.read(key)?.toString(UTF_8)?.let { Version(it) }
     }

@@ -10,10 +10,11 @@ import java.nio.file.Paths
 
 class Input
 
-val cache = FileStore(Paths.get("/tmp/agptweeter"))
+val cache = FileStore(Paths.get("/tmp/agp-tweeter"))
 
 val db = DynamoStore(DynamoDB(AmazonDynamoDBClient()).getTable("agp-tweeter"))
 
+@Suppress("unused") // used by AWS
 class Handler: RequestHandler<Input, String> {
     override fun handleRequest(input: Input?, context: Context?): String {
         ArtifactSource.values().forEach {

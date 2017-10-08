@@ -3,7 +3,6 @@ package pink.madis.agptweeter
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import java.io.IOException
-import kotlin.text.Charsets.UTF_8
 
 class EmptyFetcher: Fetcher {
     override fun latestVersion(): Version? = null
@@ -21,6 +20,8 @@ class FixedSource(
     override val fetcher: Fetcher = FixedFetcher("1.0.0"),
     override val key: String = "key",
     override val prettyName: String = "Artifact"): ArtifactSource
+
+val noTweet: (String)->Unit = { throw IllegalStateException("Unexpected tweet: $it") }
 
 class CheckerTest {
     @Test
@@ -45,15 +46,11 @@ class CheckerTest {
 
     @Test
     fun failingRemoteResultsInException() {
-        var tweet: String? = null
-
         try {
-            checkAndTweet(FixedSource(fetcher = FailingFetcher()), MemStore(), MemStore(), { tweet = it })
+            checkAndTweet(FixedSource(fetcher = FailingFetcher()), MemStore(), MemStore(), noTweet)
         }
         catch (e: IOException) {
             assertThat(e).hasMessageThat().isEqualTo("Expected failure")
-            // no tweet goes out
-            assertThat(tweet).isNull()
             return
         }
         throw IllegalStateException("Expected checkAndTweet to fail")
@@ -61,15 +58,11 @@ class CheckerTest {
 
     @Test
     fun emptyRemoteResultsInException() {
-        var tweet: String? = null
-
         try {
-            checkAndTweet(FixedSource(fetcher = EmptyFetcher()), MemStore(), MemStore(), { tweet = it })
+            checkAndTweet(FixedSource(fetcher = EmptyFetcher()), MemStore(), MemStore(), noTweet)
         }
         catch (e: IOException) {
             assertThat(e).hasMessageThat().isEqualTo("Did not get a proper remote version")
-            // no tweet goes out
-            assertThat(tweet).isNull()
             return
         }
         throw IllegalStateException("Expected checkAndTweet to fail")
@@ -95,11 +88,9 @@ class CheckerTest {
         val db = MemStore().apply {
             write("key", "1.0.0".toByteArray())
         }
-        var tweet: String? = null
 
-        checkAndTweet(FixedSource(), cache, db, { tweet = it })
+        checkAndTweet(FixedSource(), cache, db, noTweet)
 
-        assertThat(tweet).isNull()
         // make sure that cache gets updated
         assertThat(cache.read("key")).isEqualTo("1.0.0".toByteArray())
     }
@@ -109,14 +100,12 @@ class CheckerTest {
         val cache = MemStore().apply {
             write("key", "1.0.0".toByteArray())
         }
-        val db = MemStore().apply {
-            write("key", "1.0.0".toByteArray())
+        val db = object : Store {
+            override fun read(key: String): ByteArray? = throw IllegalStateException("Not supposed to hit db")
+            override fun write(key: String, bytes: ByteArray) = throw IllegalStateException("Not supposed to hit db")
         }
-        var tweet: String? = null
 
-        checkAndTweet(FixedSource(), cache, db, { tweet = it })
-
-        assertThat(tweet).isNull()
+        checkAndTweet(FixedSource(), cache, db, noTweet)
     }
 
     @Test

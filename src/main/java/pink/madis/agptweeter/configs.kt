@@ -24,12 +24,20 @@ interface ArtifactSource {
   val fetcher: Fetcher
   val key: String
   val prettyName: String
+  fun releaseNotes(version: String): String? = null
 }
 
 enum class ArtifactConfig(override val fetcher: Fetcher, override val key: String, override val prettyName: String): ArtifactSource {
   AGP(GoogleFetcher(agpCoords), agpCoords.toKey(), "Android Gradle Plugin"),
   SUPPORTLIB(GoogleFetcher(supportLibCoords), supportLibCoords.toKey(), "Android Support Library"),
   GRADLE(GradleFetcher(versionsApi), "gradle", "Gradle");
+
+  override fun releaseNotes(version: String): String? {
+    return when (this) {
+      AGP, SUPPORTLIB -> null
+      GRADLE -> "https://docs.gradle.org/$version/release-notes.html"
+    }
+  }
 
   fun toConfig(): Config {
     return Config(

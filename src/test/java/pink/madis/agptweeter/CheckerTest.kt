@@ -16,10 +16,14 @@ class FailingFetcher: Fetcher {
   override fun versions(): Set<String>? = throw IOException("Expected failure")
 }
 
-class FixedSource(
+open class FixedSource(
     override val fetcher: Fetcher = FixedFetcher("1.0.0"),
     override val key: String = "key",
     override val prettyName: String = "Artifact"): ArtifactSource
+
+class FixedReleaseNotesSource: FixedSource() {
+  override fun releaseNotes(version: String): String?  = "https://example.com/$version/release-notes.html"
+}
 
 val noTweet: (String)->Unit = { throw IllegalStateException("Unexpected tweet: $it") }
 
@@ -95,6 +99,16 @@ class CheckerTest {
 
     // make sure that cache gets updated
     assertThat(cache.versions("key")).containsExactly("1.0.0")
+  }
+
+  @Test
+  fun sourceWithReleaseNotesResultsInTweetWithReleaseNotes() {
+    val cache = VersionsStore(MemStore(), moshi)
+    val db = VersionsStore(MemStore(), moshi)
+
+    checkAndTweet(FixedReleaseNotesSource(), cache, db, tweeter)
+
+    assertThat(tweets).containsExactly("Artifact 1.0.0 is out!\nhttps://example.com/1.0.0/release-notes.html")
   }
 
   @Test

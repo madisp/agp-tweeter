@@ -30,7 +30,11 @@ fun checkAndTweet(artifactSource: ArtifactSource, cache: VersionsStore, db: Vers
   val newVersions = remoteVersions - knownVersions
 
   newVersions.forEach { version ->
-    val tweetContents = "${artifactSource.prettyName} $version is out!"
+    val releaseNotes = artifactSource.releaseNotes(version)
+    var tweetContents = "${artifactSource.prettyName} $version is out!"
+    if (releaseNotes != null) {
+      tweetContents += "\n$releaseNotes"
+    }
     println("Tweet: $tweetContents")
     tweet(tweetContents)
   }

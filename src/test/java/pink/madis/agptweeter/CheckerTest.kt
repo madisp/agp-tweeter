@@ -25,7 +25,7 @@ class FixedReleaseNotesSource: FixedSource() {
   override fun releaseNotes(version: String): String?  = "https://example.com/$version/release-notes.html"
 }
 
-val noTweet: (String)->Unit = { throw IllegalStateException("Unexpected tweet: $it") }
+fun noTweet(tweet: String) { throw IllegalStateException("Unexpected tweet: $tweet") }
 
 class CheckerTest {
   private val tweets = mutableListOf<String>()
@@ -54,7 +54,7 @@ class CheckerTest {
   @Test
   fun failingRemoteResultsInException() {
     try {
-      checkAndTweet(FixedSource(fetcher = FailingFetcher()), VersionsStore(MemStore(), moshi), VersionsStore(MemStore(), moshi), noTweet)
+      checkAndTweet(FixedSource(fetcher = FailingFetcher()), VersionsStore(MemStore(), moshi), VersionsStore(MemStore(), moshi), ::noTweet)
     }
     catch (e: IOException) {
       assertThat(e).hasMessageThat().isEqualTo("Expected failure")
@@ -66,7 +66,7 @@ class CheckerTest {
   @Test
   fun emptyRemoteResultsInException() {
     try {
-      checkAndTweet(FixedSource(fetcher = EmptyFetcher()), VersionsStore(MemStore(), moshi), VersionsStore(MemStore(), moshi), noTweet)
+      checkAndTweet(FixedSource(fetcher = EmptyFetcher()), VersionsStore(MemStore(), moshi), VersionsStore(MemStore(), moshi), ::noTweet)
     }
     catch (e: IOException) {
       assertThat(e).hasMessageThat().isEqualTo("Did not get a proper remote version")
@@ -95,7 +95,7 @@ class CheckerTest {
       store("key", setOf("1.0.0"))
     }
 
-    checkAndTweet(FixedSource(), cache, db, noTweet)
+    checkAndTweet(FixedSource(), cache, db, ::noTweet)
 
     // make sure that cache gets updated
     assertThat(cache.versions("key")).containsExactly("1.0.0")
@@ -108,7 +108,7 @@ class CheckerTest {
 
     checkAndTweet(FixedReleaseNotesSource(), cache, db, tweeter)
 
-    assertThat(tweets).containsExactly("Artifact 1.0.0 is out!\nhttps://example.com/1.0.0/release-notes.html")
+    assertThat(tweets).containsExactly("Artifact 1.0.0 is out! https://example.com/1.0.0/release-notes.html")
   }
 
   @Test
@@ -121,7 +121,7 @@ class CheckerTest {
       override fun write(key: String, value: String) = throw IllegalStateException("Not supposed to hit db")
     }, moshi)
 
-    checkAndTweet(FixedSource(), cache, db, noTweet)
+    checkAndTweet(FixedSource(), cache, db, ::noTweet)
   }
 
   @Test

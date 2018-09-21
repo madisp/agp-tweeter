@@ -1,5 +1,5 @@
 buildscript {
-  ext.kotlin_version = '1.2.21'
+  ext.kotlin_version = '1.2.70'
   repositories {
     jcenter()
     maven {
@@ -8,8 +8,8 @@ buildscript {
   }
   dependencies {
     classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-    classpath 'com.github.jengelman.gradle.plugins:shadow:2.0.2'
-    classpath 'com.github.ben-manes:gradle-versions-plugin:0.17.0'
+    classpath 'com.github.jengelman.gradle.plugins:shadow:2.0.4'
+    classpath 'com.github.ben-manes:gradle-versions-plugin:0.20.0'
   }
 }
 
@@ -23,25 +23,25 @@ repositories {
 }
 
 dependencies {
-  compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
-  compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
+  implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+  implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
 
-  compile 'org.twitter4j:twitter4j-core:4.0.6'
+  implementation 'org.twitter4j:twitter4j-core:4.0.7'
 
-  compile 'com.amazonaws:aws-lambda-java-core:1.2.0'
-  compile 'com.amazonaws:aws-lambda-java-events:2.0.2'
-  compile 'com.amazonaws:aws-java-sdk-dynamodb:1.11.0'
+  implementation 'com.amazonaws:aws-lambda-java-core:1.2.0'
+  implementation 'com.amazonaws:aws-lambda-java-events:2.2.2'
+  implementation 'com.amazonaws:aws-java-sdk-dynamodb:1.11.413'
 
-  compile 'com.vdurmont:semver4j:2.2.0'
+  implementation 'com.vdurmont:semver4j:2.2.0'
 
-  compile 'com.squareup.okhttp3:okhttp:3.9.1'
-  compile 'com.squareup.retrofit2:retrofit:2.3.0'
+  implementation 'com.squareup.okhttp3:okhttp:3.11.0'
+  implementation 'com.squareup.retrofit2:retrofit:2.4.0'
 
-  compile 'com.squareup.retrofit2:converter-moshi:2.3.0'
-  compile 'com.squareup.moshi:moshi:1.5.0'
-  compile 'com.squareup.moshi:moshi-kotlin:1.5.0'
+  implementation 'com.squareup.retrofit2:converter-moshi:2.4.0'
+  implementation 'com.squareup.moshi:moshi:1.6.0'
+  implementation 'com.squareup.moshi:moshi-kotlin:1.6.0'
 
-  testCompile 'junit:junit:4.12'
-  testCompile 'com.google.truth:truth:0.39'
-  testCompile 'com.squareup.retrofit2:retrofit-mock:2.3.0'
+  testImplementation 'junit:junit:4.12'
+  testImplementation 'com.google.truth:truth:0.42'
+  testImplementation 'com.squareup.retrofit2:retrofit-mock:2.4.0'
 }

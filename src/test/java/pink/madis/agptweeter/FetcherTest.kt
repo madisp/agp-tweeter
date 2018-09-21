@@ -1,8 +1,8 @@
 package pink.madis.agptweeter
 
 import com.google.common.truth.Truth.assertThat
-import com.squareup.moshi.KotlinJsonAdapterFactory
 import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import okhttp3.OkHttpClient
 import org.junit.Ignore
 import org.junit.Test

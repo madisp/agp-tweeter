@@ -1,7 +1,7 @@
 package pink.madis.agptweeter
 
-import com.squareup.moshi.KotlinJsonAdapterFactory
 import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import okhttp3.OkHttpClient
 import org.apache.commons.codec.digest.DigestUtils
 import retrofit2.Retrofit

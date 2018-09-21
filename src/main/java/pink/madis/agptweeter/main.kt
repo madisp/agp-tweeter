@@ -1,6 +1,6 @@
 package pink.madis.agptweeter
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder
 import com.amazonaws.services.dynamodbv2.document.DynamoDB
 import com.amazonaws.services.lambda.runtime.Context
 import com.amazonaws.services.lambda.runtime.RequestHandler
@@ -13,7 +13,7 @@ class Input
 val fileStore = FileStore(Paths.get("/tmp/agp-tweeter")).also { migrate(it) }
 val cache = VersionsStore(fileStore, moshi)
 
-val dynamoStore = DynamoStore(DynamoDB(AmazonDynamoDBClient()).getTable("agp-tweeter")).also { migrate(it) }
+val dynamoStore = DynamoStore(DynamoDB(AmazonDynamoDBClientBuilder.defaultClient()).getTable("agp-tweeter")).also { migrate(it) }
 val db = VersionsStore(dynamoStore, moshi)
 
 @Suppress("unused") // used by AWS

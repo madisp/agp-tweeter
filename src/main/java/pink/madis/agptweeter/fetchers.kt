@@ -41,8 +41,11 @@ class GradleFetcher(private val endpointVersions: GradleVersionsApi): Fetcher {
     if (!versionResponse.isSuccessful) {
       return null
     }
-    val versions = versionResponse.body()?.filter { !it.nightly && !it.snapshot }
-    return versions?.map { it.version }?.toSet()
+    val body = versionResponse.body() ?: return null
+    return body.asSequence()
+        .filter { !it.nightly && !it.snapshot }
+        .map { it.version }
+        .toSet()
   }
 }
 

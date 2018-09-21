@@ -33,7 +33,7 @@ class MemStore: Store {
   override fun read(key: String): String? = mem[key]
 
   override fun write(key: String, value: String) {
-    mem.put(key, value)
+    mem[key] = value
   }
 }
 
@@ -51,6 +51,8 @@ class FileStore(private val basePath: Path): Store {
     Files.createDirectories(f.parent)
     Files.write(f, value.toByteArray(UTF_8))
   }
+
+  override fun toString() = "local_files ($basePath)"
 }
 
 const val DYNAMO_PRIMARY_KEY = "coords"
@@ -69,6 +71,7 @@ class DynamoStore(private val db: Table): Store {
   override fun write(key: String, value: String) {
     db.putItem(Item().withPrimaryKey(DYNAMO_PRIMARY_KEY, key).withString(DYNAMO_ATTRIBUTE_NAME, value))
   }
+  override fun toString() = "dynamo (table ${db.tableName})"
 }
 
 /**

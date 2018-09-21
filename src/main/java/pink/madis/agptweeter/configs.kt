@@ -3,6 +3,7 @@ package pink.madis.agptweeter
 import com.squareup.moshi.KotlinJsonAdapterFactory
 import com.squareup.moshi.Moshi
 import okhttp3.OkHttpClient
+import org.apache.commons.codec.digest.DigestUtils
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 
@@ -27,9 +28,12 @@ interface ArtifactSource {
   fun releaseNotes(version: String): String? = null
 }
 
+// compute a key from coords, the hashing is the dumbest way to get a safe (unique) string
+private fun key(coords: MavenCoords) = DigestUtils.sha1Hex("${coords.groupId}:${coords.artifactId}")
+
 enum class ArtifactConfig(override val fetcher: Fetcher, override val key: String, override val prettyName: String): ArtifactSource {
-  AGP(GoogleFetcher(agpCoords), agpCoords.toKey(), "Android Gradle Plugin"),
-  SUPPORTLIB(GoogleFetcher(supportLibCoords), supportLibCoords.toKey(), "Android Support Library"),
+  AGP(GoogleFetcher(agpCoords), key(agpCoords), "Android Gradle Plugin"),
+  SUPPORTLIB(GoogleFetcher(supportLibCoords), key(supportLibCoords), "Android Support Library"),
   GRADLE(GradleFetcher(versionsApi), "gradle", "Gradle");
 
   override fun releaseNotes(version: String): String? {

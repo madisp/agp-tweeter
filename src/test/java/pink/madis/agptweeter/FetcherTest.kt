@@ -6,6 +6,8 @@ import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import okhttp3.OkHttpClient
 import org.junit.Ignore
 import org.junit.Test
+import pink.madis.agptweeter.store.MemStore
+import pink.madis.agptweeter.store.VersionsStore
 import retrofit2.Call
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
@@ -13,6 +15,13 @@ import retrofit2.mock.Calls
 
 class FixedGradleApi(private vararg val versions: GradleVersion): GradleVersionsApi {
   override fun all(): Call<List<GradleVersion>> = Calls.response(listOf(*versions))
+}
+
+/**
+ * Fetches versions from the given store
+ */
+class StoreFetcher(private val store: VersionsStore, private val key: String): Fetcher {
+  override fun versions(): Set<String>? = store.versions(key).versions.toSet()
 }
 
 class FetcherTest {
@@ -127,11 +136,11 @@ class FetcherTest {
     val store = VersionsStore(MemStore(), moshi)
     val fetcher = StoreFetcher(store, "key")
 
-    store.store("key", setOf("0.0.1"))
+    store.store("key", StoredVersions(setOf("0.0.1"), emptyList()))
 
     assertThat(fetcher.versions()).containsExactly("0.0.1")
 
-    store.store("key", setOf("0.0.1", "0.0.10"))
+    store.store("key", StoredVersions(setOf("0.0.1", "0.0.10"), emptyList()))
     assertThat(fetcher.versions()).containsExactly("0.0.1", "0.0.10")
 
     // other coordinates should still be empty

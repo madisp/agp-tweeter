@@ -1,4 +1,4 @@
-package pink.madis.agptweeter
+package pink.madis.agptweeter.store
 
 import java.io.IOException
 import java.nio.file.Files
@@ -7,6 +7,7 @@ import com.amazonaws.services.dynamodbv2.document.Item
 import com.amazonaws.services.dynamodbv2.document.Table
 import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec
 import com.squareup.moshi.Moshi
+import pink.madis.agptweeter.StoredVersions
 import kotlin.text.Charsets.UTF_8
 
 /**
@@ -77,14 +78,16 @@ class DynamoStore(private val db: Table): Store {
 /**
  * A specific class that stores versions
  */
-class VersionsStore(private val backingStore: Store, moshi: Moshi) {
+class VersionsStore(backingStore: Store, moshi: Moshi) {
+  private val store by lazy { migrate(backingStore, moshi) }
+
   private val adapter = moshi.adapter(StoredVersions::class.java)
 
-  fun versions(key: String): Set<String> {
-    return backingStore.read(key)?.let { adapter.fromJson(it) }?.versions?.toSet() ?: setOf()
+  fun versions(key: String): StoredVersions {
+    return store.read(key)?.let { adapter.fromJson(it) } ?: StoredVersions(emptySet(), emptyList())
   }
 
-  fun store(key: String, versions: Set<String>) {
-    backingStore.write(key, adapter.toJson(StoredVersions(versions.toList())))
+  fun store(key: String, versions: StoredVersions) {
+    store.write(key, adapter.toJson(versions))
   }
 }

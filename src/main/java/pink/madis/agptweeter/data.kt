@@ -1,5 +1,10 @@
 package pink.madis.agptweeter
 
+import com.squareup.moshi.JsonAdapter
+import com.squareup.moshi.JsonReader
+import com.squareup.moshi.JsonWriter
+import java.time.Instant
+
 data class MavenCoords(
     val groupId: String,
     val artifactId: String
@@ -25,6 +30,27 @@ data class GradleVersion(
     val nightly: Boolean
 )
 
-data class StoredVersions(
-    val versions: List<String>
+/**
+ * A version that was seen but for some reason not tweeted yet. Best example is Gradle where we want to hold off the
+ * tweet until release notes page is available.
+ */
+data class PendingVersion(
+    val version: String,
+    val seenAt: Instant
 )
+
+/**
+ * A list of both tweeted & pending versions
+ */
+data class StoredVersions(
+    val versions: Set<String>,
+    val pending: List<PendingVersion>
+)
+
+class InstantAdapter : JsonAdapter<Instant>() {
+  override fun fromJson(reader: JsonReader): Instant = Instant.parse(reader.nextString())
+
+  override fun toJson(writer: JsonWriter, value: Instant?) {
+    writer.value(value.toString())
+  }
+}

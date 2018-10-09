@@ -13,13 +13,6 @@ interface Fetcher {
 }
 
 /**
- * Fetches versions from the given store
- */
-class StoreFetcher(private val store: VersionsStore, private val key: String): Fetcher {
-  override fun versions(): Set<String>? = store.versions(key)
-}
-
-/**
  * Fetches a latest version from the Google maven repo
  */
 class GoogleFetcher(private val coords: MavenCoords): Fetcher {

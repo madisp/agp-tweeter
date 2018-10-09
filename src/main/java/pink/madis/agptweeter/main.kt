@@ -4,17 +4,30 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder
 import com.amazonaws.services.dynamodbv2.document.DynamoDB
 import com.amazonaws.services.lambda.runtime.Context
 import com.amazonaws.services.lambda.runtime.RequestHandler
+import okhttp3.Request
+import pink.madis.agptweeter.store.DynamoStore
+import pink.madis.agptweeter.store.FileStore
+import pink.madis.agptweeter.store.VersionsStore
 import twitter4j.TwitterFactory
 import twitter4j.conf.ConfigurationBuilder
 import java.nio.file.Paths
+import java.time.Instant
 
 class Input
 
-val fileStore = FileStore(Paths.get("/tmp/agp-tweeter")).also { migrate(it) }
+val fileStore = FileStore(Paths.get("/tmp/agp-tweeter"))
 val cache = VersionsStore(fileStore, moshi)
 
-val dynamoStore = DynamoStore(DynamoDB(AmazonDynamoDBClientBuilder.defaultClient()).getTable("agp-tweeter")).also { migrate(it) }
+val dynamoStore = DynamoStore(DynamoDB(AmazonDynamoDBClientBuilder.defaultClient()).getTable("agp-tweeter"))
 val db = VersionsStore(dynamoStore, moshi)
+
+val clock = { Instant.now() }
+
+val urlChecker: UrlChecker = { url ->
+  val call = okClient.newCall(Request.Builder().url(url).build())
+  val resp = call.execute()
+  resp.isSuccessful
+}
 
 @Suppress("unused") // used by AWS
 class Handler: RequestHandler<Input, String> {
@@ -27,7 +40,7 @@ class Handler: RequestHandler<Input, String> {
         .setOAuthAccessTokenSecret(config.twitter.accessTokenSecret)
         .setOAuthConsumerKey(config.twitter.consumerKey)
         .setOAuthConsumerSecret(config.twitter.consumerSecret).build()).instance
-      checkAndTweet(it, cache, db) { msg -> twitter.updateStatus(msg) }
+      checkAndTweet(it, cache, db, clock, urlChecker) { msg -> twitter.updateStatus(msg) }
     }
     return ""
   }
@@ -69,8 +82,8 @@ class PopulateHandler: RequestHandler<Input, String> {
         ArtifactConfig.SUPPORTLIB -> versions.addAll(oldSupportLibVersions)
         ArtifactConfig.GRADLE -> {}
       }
-      cache.store(it.key, versions)
-      db.store(it.key, versions)
+      cache.store(it.key, StoredVersions(versions, emptyList()))
+      db.store(it.key, StoredVersions(versions, emptyList()))
     }
     return ""
   }

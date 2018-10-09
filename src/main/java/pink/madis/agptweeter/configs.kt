@@ -6,13 +6,15 @@ import okhttp3.OkHttpClient
 import org.apache.commons.codec.digest.DigestUtils
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
+import java.time.Instant
 
 val agpCoords = MavenCoords("com.android.tools.build", "gradle")
 val supportLibCoords = MavenCoords("com.android.support", "support-v4")
 
-val okClient = OkHttpClient.Builder().build()!!
+val okClient = OkHttpClient.Builder().followRedirects(true).followSslRedirects(true).build()!!
 val moshi = Moshi.Builder()
   .add(KotlinJsonAdapterFactory())
+  .add(Instant::class.java, InstantAdapter())
   .build()!!
 val versionsApi = Retrofit.Builder()
   .client(okClient)

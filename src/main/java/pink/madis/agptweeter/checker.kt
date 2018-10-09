@@ -73,7 +73,8 @@ fun canTweet(artifactSource: ArtifactSource, clock: Clock, checker: UrlChecker, 
   return when {
     // no release notes URL at all, OK to tweet
     notes.isNullOrBlank() -> true
-    // release notes timed out by now (older than 1hr, ok to tweet) //TODO(madis) should we still include the relnotes URL in this case?
+    // release notes timed out by now (older than 1hr, ok to tweet)
+    // TODO(madis) should we still include the relnotes URL in this case?
     (pendingVersion.seenAt + 1.hours()).isBefore(clock()) -> true
     // release notes are live
     checker(notes!!) -> true

@@ -1,6 +1,10 @@
 # agp-tweeter [![Build Status](https://travis-ci.org/madisp/agp-tweeter.svg?branch=master)](https://travis-ci.org/madisp/agp-tweeter)
 
-Tweets latest versions of Android Gradle Plugin, Android Support Library and Gradle.
+Tweets latest versions of Android Gradle Plugin and Gradle.
+
+Mastodon accounts:
+
+* Android Gradle Plugin: [@agpversions@androiddev.social](https://androiddev.social/@agpversions)
 
 Twitter accounts:
 

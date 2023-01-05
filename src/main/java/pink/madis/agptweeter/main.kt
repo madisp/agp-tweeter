@@ -8,8 +8,9 @@ import okhttp3.Request
 import pink.madis.agptweeter.store.DynamoStore
 import pink.madis.agptweeter.store.FileStore
 import pink.madis.agptweeter.store.VersionsStore
-import twitter4j.TwitterFactory
-import twitter4j.conf.ConfigurationBuilder
+import twitter4j.AccessToken
+import twitter4j.Twitter
+import twitter4j.TwitterObjectFactory
 import java.nio.file.Paths
 import java.time.Instant
 
@@ -35,12 +36,11 @@ class Handler: RequestHandler<Input, String> {
   override fun handleRequest(input: Input?, context: Context?): String {
     ArtifactConfig.values().forEach {
       val config = it.toConfig()
-      val twitter = TwitterFactory(ConfigurationBuilder()
-        .setOAuthAccessToken(config.twitter.accessToken)
-        .setOAuthAccessTokenSecret(config.twitter.accessTokenSecret)
-        .setOAuthConsumerKey(config.twitter.consumerKey)
-        .setOAuthConsumerSecret(config.twitter.consumerSecret).build()).instance
-      checkAndTweet(it, cache, db, clock, urlChecker) { msg -> twitter.updateStatus(msg) }
+      val twitter = Twitter.newBuilder()
+        .oAuthAccessToken(config.twitter.accessToken, config.twitter.accessTokenSecret)
+        .oAuthConsumer(config.twitter.consumerKey, config.twitter.consumerSecret)
+        .build()
+      checkAndTweet(it, cache, db, clock, urlChecker) { msg -> twitter.v1().tweets().updateStatus(msg) }
     }
     return ""
   }

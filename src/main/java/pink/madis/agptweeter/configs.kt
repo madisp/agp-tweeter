@@ -11,17 +11,17 @@ import java.time.Instant
 val agpCoords = MavenCoords("com.android.tools.build", "gradle")
 val supportLibCoords = MavenCoords("com.android.support", "support-v4")
 
-val okClient = OkHttpClient.Builder().followRedirects(true).followSslRedirects(true).build()!!
-val moshi = Moshi.Builder()
+val okClient = OkHttpClient.Builder().followRedirects(true).followSslRedirects(true).build()
+val moshi : Moshi = Moshi.Builder()
   .add(KotlinJsonAdapterFactory())
   .add(Instant::class.java, InstantAdapter())
   .build()!!
-val versionsApi = Retrofit.Builder()
+val versionsApi : GradleVersionsApi = Retrofit.Builder()
   .client(okClient)
   .addConverterFactory(MoshiConverterFactory.create(moshi))
   .baseUrl("https://services.gradle.org")
   .build()
-  .create(GradleVersionsApi::class.java)!!
+  .create(GradleVersionsApi::class.java)
 
 interface ArtifactSource {
   val fetcher: Fetcher

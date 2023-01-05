@@ -77,7 +77,7 @@ fun canTweet(artifactSource: ArtifactSource, clock: Clock, checker: UrlChecker, 
     // TODO(madis) should we still include the relnotes URL in this case?
     (pendingVersion.seenAt + 1.hours()).isBefore(clock()) -> true
     // release notes are live
-    checker(notes!!) -> true
+    checker(notes) -> true
     else -> false
   }
 }
